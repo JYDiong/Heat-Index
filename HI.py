@@ -88,7 +88,7 @@ while True:
     # Plot this timestep (simplified example)
     plt.figure(figsize=(6, 4))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    im = ax.contourf(longitude, latitude, masked_field, transform=ccrs.PlateCarree(),cmap=cmap, norm=norm, extend='both')
+    im = ax.contourf(longitude, latitude, masked_field, level=bounds,transform=ccrs.PlateCarree(),cmap=cmap, norm=norm, extend='both')
     ax.coastlines()
     ax.set_title(f"Forecast heat index, init: {str(adate)}, \n valid: {str(formatted_time)}", fontsize=10)
     cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
@@ -99,6 +99,7 @@ while True:
     cbar.set_ticklabels(["80–90: Caution", "90–103: Ext. Caution", "103–124: Danger"])
     cbar.ax.tick_params(labelsize=6) 
     plt.savefig('./image/Heat_index_init_'+str(idx)+'.png',dpi=300)
+    plt.close()
 
     idx += 1
     if idx >= 41:  # this simulates the "while" part of "do-while"
