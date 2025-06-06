@@ -104,7 +104,7 @@ for idx in range(41):
 ### accumulated rainfall
 
 rain = ds_Malaysian['apcpsfc']  # kg m-2 == mm
-rain_mm = rain * 1000  # Convert from m to mm if needed (check units)
+rain_mm = rain * 1  # Convert from m to mm if needed (check units)
 
 rain_computed = rain_mm.compute()
 
