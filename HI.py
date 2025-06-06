@@ -70,7 +70,7 @@ colors = ['#ffe082', '#ffb74d', '#e64a19']
 cmap = mcolors.ListedColormap(colors)
 norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
-### limit up to 2 days forecast, 16 timesteps
+### limit up to 5 days forecast, 40 timesteps
 
 longitude=HI_computed.lon
 latitude=HI_computed.lat
