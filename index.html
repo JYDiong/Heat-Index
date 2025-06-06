@@ -1,11 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>WASP Forecast Viewer</title>
-  <style>body { text-align: center; font-family: sans-serif; }</style>
+  <meta charset="UTF-8">
+  <title>WASP Heat Index Forecast Viewer</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #222;
+    }
+    img {
+      max-width: 90%;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input[type=range] {
+      width: 80%;
+      margin-top: 30px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>WASP GFS Forecast</h1>
-  <img src="images/forecast.png" alt="Forecast Image" style="max-width:80%;">
+
+  <h1>WASP GFS Heat Index Forecast</h1>
+
+  <label for="timestep">Forecast Hour: <span id="hour-label">0</span></label>
+  <input type="range" id="slider" min="0" max="15" value="0">
+  <br>
+  <img id="forecast-image" src="output/Heat_index_init_0.png" alt="Forecast Image">
+
+  <script>
+    const slider = document.getElementById('slider');
+    const image = document.getElementById('forecast-image');
+    const hourLabel = document.getElementById('hour-label');
+
+    slider.addEventListener('input', function () {
+      const idx = slider.value;
+      image.src = `output/Heat_index_init_${idx}.png`;
+      hourLabel.textContent = idx;
+    });
+  </script>
+
 </body>
 </html>
+
