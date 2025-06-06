@@ -121,7 +121,7 @@ for idx in range(41):
 
     plt.figure(figsize=(6, 4))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    im = ax.contourf(longitude, latitude, field, transform=ccrs.PlateCarree(), cmap='Blues', levels=np.arange(0, 50, 5))
+    im = ax.contourf(longitude, latitude, field, transform=ccrs.PlateCarree(), cmap='Blues', levels=np.arange(0, 35, 5),extend='max')
     ax.coastlines()
     ax.set_title(f"3-hourly Accumulated Rainfall (mm), init: {adate}, \n valid: {formatted_time}", fontsize=10)
     cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
