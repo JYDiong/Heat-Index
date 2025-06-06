@@ -96,7 +96,7 @@ while True:
     cbar.set_ticks([85, 96.5,113.5])  # approximate midpoints of the ranges
     cbar.set_ticklabels(labels)
     cbar.ax.tick_params(labelsize=6) 
-    plt.savefig('Heat_index_init_'+str(idx)+'.png',dpi=300)
+    plt.savefig('./image/Heat_index_init_'+str(idx)+'.png',dpi=300)
 
     idx += 1
     if idx >= 16:  # this simulates the "while" part of "do-while"
