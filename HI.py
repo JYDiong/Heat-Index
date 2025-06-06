@@ -27,14 +27,14 @@ dd = adate1.strftime("%d")
 
 url=f'https://nomads.ncep.noaa.gov/dods/gfs_0p25/gfs{yyyy}{mm}{dd}/gfs_0p25_00z'
 
-ds = xr.open_dataset(url, engine='netcdf4')
+ds = xr.open_dataset(url)
 
 ds_Malaysian=ds.sel(lon=slice(100,120),lat=slice(0,12))
 
 def temp2F(ds):
     celcius = ds - 273.15
     fahrenheit = (celcius*(9/5))+32
-    return Fahrenheit
+    return fahrenheit
 
 def calculate_heat_index(temperature_f, relative_humidity_percent):
     """
