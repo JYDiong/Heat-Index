@@ -104,3 +104,26 @@ while True:
     idx += 1
     if idx >= 41:  # this simulates the "while" part of "do-while"
         break
+
+### accumulated rainfall
+
+rain = ds_Malaysian['apcpsfc']  # kg m-2 == mm
+rain_mm = rain * 1000  # Convert from m to mm if needed (check units)
+
+rain_computed = rain_mm.compute()
+
+for idx in range(41):
+    field = rain_computed[idx]
+    forecast_time = timestep[idx]
+    formatted_time = pd.to_datetime(forecast_time.values).strftime('%Y-%m-%d %H:%M')
+
+    plt.figure(figsize=(6, 4))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    im = ax.contourf(longitude, latitude, field, transform=ccrs.PlateCarree(), cmap='Blues', levels=np.arange(0, 50, 5))
+    ax.coastlines()
+    ax.set_title(f"Forecast rainfall (mm), init: {adate}, \n valid: {formatted_time}", fontsize=10)
+    cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
+    cbar.set_label("Rainfall (mm)", fontsize='8')
+    cbar.ax.tick_params(labelsize=6)
+    plt.savefig(f'./image_rain/Rainfall_map_{idx}.png', dpi=300)
+    plt.close()
