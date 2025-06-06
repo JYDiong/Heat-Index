@@ -104,12 +104,18 @@ for idx in range(41):
 ### accumulated rainfall
 
 rain = ds_Malaysian['apcpsfc']  # kg m-2 == mm
-rain_mm = rain * 1  # Convert from m to mm if needed (check units)
 
-rain_computed = rain_mm.compute()
+# Compute 3-hourly rainfall (difference between time steps)
+rain_3hr = rain.diff(dim='time')  # Now has one less time step
+
+# Adjust time (optional, for plotting)
+rain_time = ds_Malaysian['time'][1:]  # Matches dimensions after diff
+
+# Compute to load into memory
+rain_3hr_computed = rain_3hr.compute()
 
 for idx in range(41):
-    field = rain_computed[idx]
+    field = rain_3hr_computed[idx]
     forecast_time = timestep[idx]
     formatted_time = pd.to_datetime(forecast_time.values).strftime('%Y-%m-%d %H:%M')
 
