@@ -39,7 +39,7 @@
   <label for="timestep">Forecast Hour: <span id="hour-label">0</span></label>
   <input type="range" id="slider" min="0" max="15" value="0">
   <br>
-  <img id="forecast-image" src="output/Heat_index_init_0.png" alt="Forecast Image">
+  <img id="forecast-image" src="./image/Heat_index_init_0.png" alt="Forecast Image">
 
   <script>
     const slider = document.getElementById('slider');
@@ -48,7 +48,7 @@
 
     slider.addEventListener('input', function () {
       const idx = slider.value;
-      image.src = `output/Heat_index_init_${idx}.png`;
+      image.src = `./image/Heat_index_init_${idx}.png`;
       hourLabel.textContent = idx;
     });
   </script>
