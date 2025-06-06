@@ -64,6 +64,13 @@
 
   <img id="forecast-image" src="./image/Heat_index_init_0.png" alt="Forecast Image" />
 
+  <h1>GFS Rainfall Forecast</h1>
+
+  <label for="slider-rain">Forecast Hour: <span id="hour-label-rain">0</span></label>
+  <input type="range" id="slider-rain" min="0" max="39" value="0" />
+
+  <img id="rain-image" src="./image_rain/Rainfall_map_0.png" alt="Rainfall Forecast Image" />
+
   <footer>
     <p>&copy; 2025 <a href="https://github.com/JYDiong">J.Y. Diong</a>. All rights reserved.</p>
     <p>Forecast generated using <a href="https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast">GFS Data</a> from NOAA.</p>
@@ -78,6 +85,16 @@
       const idx = slider.value;
       image.src = `./image/Heat_index_init_${idx}.png`;
       hourLabel.textContent = idx * 3;
+    });
+
+    const sliderRain = document.getElementById('slider-rain');
+    const rainImage = document.getElementById('rain-image');
+    const hourLabelRain = document.getElementById('hour-label-rain');
+
+    sliderRain.addEventListener('input', () => {
+    const idx = sliderRain.value;
+    rainImage.src = `./image_rain/Rainfall_map_${idx}.png`;
+    hourLabelRain.textContent = idx * 3;
     });
   </script>
 
