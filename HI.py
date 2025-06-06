@@ -92,9 +92,11 @@ while True:
     ax.coastlines()
     ax.set_title(f"Forecast heat index, init: {str(adate)}, \n valid: {str(formatted_time)}", fontsize=10)
     cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
-    cbar.set_label("HI Risk Level (°F)",fontsize='8')
-    cbar.set_ticks([85, 96.5,113.5])  # approximate midpoints of the ranges
-    cbar.set_ticklabels(labels)
+    cbar.set_label("HI Risk Level",fontsize='8')
+    #cbar.set_ticks([85, 96.5,113.5])  # approximate midpoints of the ranges
+    #cbar.set_ticklabels(labels)
+    cbar.set_ticks([85, 96.5, 113.5])
+    cbar.set_ticklabels(["80–90: Caution", "90–103: Ext. Caution", "103–124: Danger"])
     cbar.ax.tick_params(labelsize=6) 
     plt.savefig('./image/Heat_index_init_'+str(idx)+'.png',dpi=300)
 
