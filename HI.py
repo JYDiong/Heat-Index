@@ -101,5 +101,5 @@ while True:
     plt.savefig('./image/Heat_index_init_'+str(idx)+'.png',dpi=300)
 
     idx += 1
-    if idx >= 16:  # this simulates the "while" part of "do-while"
+    if idx >= 41:  # this simulates the "while" part of "do-while"
         break
