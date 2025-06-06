@@ -77,8 +77,7 @@ latitude=HI_computed.lat
 data=HI_computed.values
 timestep=HI_computed.time
 
-idx = 0
-while True:
+for idx in range(41):
     field = data[idx]
     forecast_time=timestep[idx]
     formatted_time = pd.to_datetime(forecast_time.values).strftime('%Y-%m-%d %H:%M')
@@ -100,10 +99,6 @@ while True:
     cbar.ax.tick_params(labelsize=6) 
     plt.savefig('./image/Heat_index_init_'+str(idx)+'.png',dpi=300)
     plt.close()
-
-    idx += 1
-    if idx >= 41:  # this simulates the "while" part of "do-while"
-        break
 
 ### accumulated rainfall
 
