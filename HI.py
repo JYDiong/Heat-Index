@@ -27,7 +27,7 @@ dd = adate1.strftime("%d")
 
 url=f'https://nomads.ncep.noaa.gov/dods/gfs_0p25/gfs{yyyy}{mm}{dd}/gfs_0p25_00z'
 
-ds = xr.open_dataset(url)
+ds = xr.open_dataset(url, engine='netcdf4')
 
 ds_Malaysian=ds.sel(lon=slice(100,120),lat=slice(0,12))
 
