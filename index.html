@@ -39,6 +39,18 @@
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #777;
+    }
+    footer a {
+      color: #555;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -48,9 +60,14 @@
   <h1>GFS Heat Index Forecast</h1>
 
   <label for="slider">Forecast Hour: <span id="hour-label">0</span></label>
-  <input type="range" id="slider" min="0" max="15" value="0" />
+  <input type="range" id="slider" min="0" max="39" value="0" />
 
   <img id="forecast-image" src="./image/Heat_index_init_0.png" alt="Forecast Image" />
+
+  <footer>
+    <p>&copy; 2025 <a href="https://github.com/JYDiong">J.Y. Diong</a>. All rights reserved.</p>
+    <p>Forecast generated using <a href="https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast">GFS Data</a> from NOAA.</p>
+  </footer>
 
   <script>
     const slider = document.getElementById('slider');
