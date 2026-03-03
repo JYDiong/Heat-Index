@@ -22,29 +22,27 @@ date = datetime.utcnow().replace(
     hour=0, minute=0, second=0, microsecond=0
 ) - timedelta(days=1)
 
-# --------------------------------------------------
-# Select forecast hour (CHANGE IF NEEDED)
-# --------------------------------------------------
-fxx = 6
+datasets = []
 
-H = Herbie(
-    date=date,
-    model="gfs",
-    product="pgrb2.0p25",
-    fxx=fxx
-)
+for fxx in range(0, 25):   # 0 to 24 forecast hours
+    H = Herbie(
+        date=date,
+        model="gfs",
+        product="pgrb2.0p25",
+        fxx=fxx
+    )
 
-# --------------------------------------------------
-# Download Required Variables
-# --------------------------------------------------
-ds = H.xarray(
-    ":(TMP:2 m above ground|DPT:2 m above ground|APCP:surface):"
-)
+    ds = H.xarray(
+        ":(TMP:2 m above ground|DPT:2 m above ground|APCP:surface):"
+    )
 
-# If Herbie returns list → merge
-if isinstance(ds, list):
-    ds = xr.merge(ds)
+    if isinstance(ds, list):
+        ds = xr.merge(ds)
 
+    datasets.append(ds)
+
+# Combine all forecast hours into one dataset
+ds = xr.concat(datasets, dim="time")
 # --------------------------------------------------
 # Subset Malaysia
 # --------------------------------------------------
