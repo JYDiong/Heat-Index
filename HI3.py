@@ -29,7 +29,7 @@ for fxx in range(0, 25):
 ds = H.xarray(":(TMP:2 m above ground|APCP:surface):")
 if isinstance(ds, list):
     ds = xr.merge(ds)
-ds_Malaysian = ds.sel(lon=slice(100, 120), lat=slice(12, 0))
+ds_Malaysian = ds.sel(longitude=slice(100, 120), latitude=slice(12, 0))
 
 def temp2F(ds):
     celcius = ds - 273.15
@@ -81,8 +81,8 @@ colors = ['#ffe082', '#ffb74d', '#e64a19']
 cmap = mcolors.ListedColormap(colors)
 norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
-longitude = HI_computed.lon
-latitude = HI_computed.lat
+longitude = HI_computed.longitude
+latitude = HI_computed.latitude
 data = HI_computed.values
 timestep = HI_computed.time
 
