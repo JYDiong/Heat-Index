@@ -1,35 +1,48 @@
+import os
+import warnings
+import numpy as np
 import pandas as pd
 import xarray as xr
-import sys
-import os
-import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import cartopy.crs as ccrs
 from datetime import datetime, timedelta
-import warnings
-
-warnings.filterwarnings('ignore')
-
 from herbie import Herbie
 
-# Create folders
-os.makedirs('./image_rain', exist_ok=True)
-os.makedirs('./image', exist_ok=True)
+warnings.filterwarnings("ignore")
 
 # --------------------------------------------------
-# Date (Yesterday 00 UTC)
+# Create output folders
 # --------------------------------------------------
-date = datetime.utcnow().replace(
+os.makedirs("./image", exist_ok=True)
+os.makedirs("./image_rain", exist_ok=True)
+
+# --------------------------------------------------
+# Initialization Time (Yesterday 00 UTC)
+# --------------------------------------------------
+init_date = datetime.utcnow().replace(
     hour=0, minute=0, second=0, microsecond=0
 ) - timedelta(days=1)
 
+# --------------------------------------------------
+# FULL GFS Forecast Hours (0–384)
+# 0–120 hourly
+# 126–384 every 3 hours
+# --------------------------------------------------
+forecast_hours = list(range(0, 121)) + list(range(126, 385, 3))
+
 datasets = []
 
-for fxx in range(0, 25):   # 0 to 24 forecast hours
+print("Downloading GFS full forecast...")
+
+for fxx in forecast_hours:
+    print(f"Downloading F{fxx:03d}")
+
     H = Herbie(
-        date=date,
+        date=init_date,
         model="gfs",
         product="pgrb2.0p25",
-        fxx=fxx
+        fxx=fxx,
     )
 
     ds = H.xarray(
@@ -41,12 +54,17 @@ for fxx in range(0, 25):   # 0 to 24 forecast hours
 
     datasets.append(ds)
 
-# Combine all forecast hours into one dataset
+# --------------------------------------------------
+# Combine all timesteps
+# --------------------------------------------------
 ds = xr.concat(datasets, dim="time")
+
+print("Total timesteps:", len(ds.time))
+
 # --------------------------------------------------
 # Subset Malaysia
 # --------------------------------------------------
-ds_Malaysian = ds.sel(
+ds = ds.sel(
     longitude=slice(100, 120),
     latitude=slice(12, 0)
 )
@@ -54,36 +72,26 @@ ds_Malaysian = ds.sel(
 # --------------------------------------------------
 # Temperature Conversion
 # --------------------------------------------------
-def temp2F(da):
-    celsius = da - 273.15
-    fahrenheit = (celsius * 9/5) + 32
-    return fahrenheit
+def kelvin_to_fahrenheit(da):
+    return (da - 273.15) * 9/5 + 32
 
-
-tmp_2m_f = temp2F(ds_Malaysian["t2m"])
+tmp_f = kelvin_to_fahrenheit(ds["t2m"])
 
 # --------------------------------------------------
-# Compute Relative Humidity from Temp + Dewpoint
+# Relative Humidity Calculation
 # --------------------------------------------------
-T = ds_Malaysian["t2m"] - 273.15
+T = ds["t2m"] - 273.15
+Td = ds["d2m"] - 273.15
 
-if "d2m" not in ds_Malaysian:
-    raise ValueError("Dewpoint (d2m) not found in dataset")
+es = 6.112 * np.exp((17.67 * T) / (T + 243.5))
+e  = 6.112 * np.exp((17.67 * Td) / (Td + 243.5))
 
-Td = ds_Malaysian["d2m"] - 273.15
-
-es = 6.112 * xr.ufuncs.exp((17.67 * T) / (T + 243.5))
-e  = 6.112 * xr.ufuncs.exp((17.67 * Td) / (Td + 243.5))
-
-rh2m = 100 * (e / es)
-
-# Store into dataset
-ds_Malaysian["rh2m"] = rh2m
+rh = 100 * (e / es)
 
 # --------------------------------------------------
 # Heat Index Calculation
 # --------------------------------------------------
-def calculate_heat_index_combined(T_f, RH):
+def calculate_heat_index(T_f, RH):
 
     HI_simple = 0.5 * (
         T_f + 61.0 + ((T_f - 68.0) * 1.2) + (RH * 0.094)
@@ -101,72 +109,111 @@ def calculate_heat_index_combined(T_f, RH):
         - 1.99e-6 * T_f**2 * RH**2
     )
 
-    HI = xr.where(T_f <= 80, HI_simple, HI_full)
+    return xr.where(T_f <= 80, HI_simple, HI_full)
 
-    return HI
+HI = calculate_heat_index(tmp_f, rh).compute()
 
-
-HI = calculate_heat_index_combined(tmp_2m_f, rh2m)
-
-HI_computed = HI.compute()
-
-import cartopy.crs as ccrs
-import cartopy.mpl.ticker as cticker
-from matplotlib.colors import BoundaryNorm
-import numpy as np
-import matplotlib.colors as mcolors
-
-# Define boundaries and labels
+# --------------------------------------------------
+# Plot Settings
+# --------------------------------------------------
 bounds = [80, 90, 103, 124]
-labels = ["Caution", "Ext. Caution", "Danger"]
 colors = ['#ffe082', '#ffb74d', '#e64a19']
 cmap = mcolors.ListedColormap(colors)
 norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
-longitude = HI_computed.longitude
-latitude = HI_computed.latitude
-data = HI_computed.values
-timestep = HI_computed.time
+lon = HI.longitude
+lat = HI.latitude
+times = HI.time
+n_times = len(times)
 
-# Plot Heat Index
-for idx in range(41):
-    field = data[idx]
-    forecast_time = timestep[idx]
-    formatted_time = pd.to_datetime(forecast_time.values).strftime('%Y-%m-%d %H:%M')
-    masked_field = np.where(field >= 80, field, np.nan)  # mask below 80°F
+init_time_str = init_date.strftime("%Y-%m-%d %H:%M UTC")
+
+# --------------------------------------------------
+# Plot Heat Index Maps
+# --------------------------------------------------
+print("Generating Heat Index maps...")
+
+for i in range(n_times):
+
+    valid_time = pd.to_datetime(times[i].values)
+    valid_time_str = valid_time.strftime("%Y-%m-%d %H:%M UTC")
+
+    field = HI[i].values
+    field = np.where(field >= 80, field, np.nan)
 
     plt.figure(figsize=(6, 4))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    im = ax.contourf(longitude, latitude, masked_field, levels=bounds,
-                     transform=ccrs.PlateCarree(), cmap=cmap, norm=norm, extend='both')
+
+    im = ax.contourf(
+        lon, lat, field,
+        levels=bounds,
+        cmap=cmap,
+        norm=norm,
+        transform=ccrs.PlateCarree(),
+        extend="both"
+    )
+
     ax.coastlines()
-    ax.set_title(f"Forecast Heat Index, init: {str(adate)}, \n valid: {str(formatted_time)}", fontsize=10)
-    cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
-    cbar.set_label("HI Risk Level", fontsize=8)
+
+    ax.set_title(
+        f"Forecast Heat Index\nInit: {init_time_str}\nValid: {valid_time_str}",
+        fontsize=9
+    )
+
+    cbar = plt.colorbar(
+        im, orientation="horizontal",
+        pad=0.02, aspect=30, shrink=0.8
+    )
+
     cbar.set_ticks([85, 96.5, 113.5])
-    cbar.set_ticklabels(["80–90: Caution", "90–103: Ext. Caution", "103–124: Danger"])
+    cbar.set_ticklabels([
+        "80–90: Caution",
+        "90–103: Ext. Caution",
+        "103–124: Danger"
+    ])
     cbar.ax.tick_params(labelsize=6)
-    plt.savefig(f'./image/Heat_index_init_{idx}.png', dpi=300)
+
+    plt.savefig(f"./image/heat_index_{i:03d}.png", dpi=300)
     plt.close()
 
-# Rainfall calculation
-rain = ds_Malaysian['apcpsfc']  # kg m-2 == mm
-rain_3hr = rain.diff(dim='time')
-rain_3hr_computed = rain_3hr.compute()
+# --------------------------------------------------
+# 3-Hourly Rainfall Maps
+# --------------------------------------------------
+print("Generating rainfall maps...")
 
-for idx in range(41):
-    field = rain_3hr_computed[idx]
-    forecast_time = timestep[idx]
-    formatted_time = pd.to_datetime(forecast_time.values).strftime('%Y-%m-%d %H:%M')
+rain = ds["apcpsfc"]
+rain_3hr = rain.diff("time").compute()
+
+for i in range(len(rain_3hr.time)):
+
+    valid_time = pd.to_datetime(rain_3hr.time[i].values)
+    valid_time_str = valid_time.strftime("%Y-%m-%d %H:%M UTC")
+
+    field = rain_3hr[i].values
 
     plt.figure(figsize=(6, 4))
     ax = plt.axes(projection=ccrs.PlateCarree())
-    im = ax.contourf(longitude, latitude, field, transform=ccrs.PlateCarree(),
-                     cmap='Blues', levels=np.arange(0, 50, 5), extend='max')
+
+    im = ax.contourf(
+        lon, lat, field,
+        levels=np.arange(0, 50, 5),
+        cmap="Blues",
+        transform=ccrs.PlateCarree(),
+        extend="max"
+    )
+
     ax.coastlines()
-    ax.set_title(f"3-hourly Accumulated Rainfall (mm), init: {adate}, \n valid: {formatted_time}", fontsize=10)
-    cbar = plt.colorbar(im, orientation='horizontal', pad=0.02, aspect=30, shrink=0.8, ax=ax, location='bottom')
-    cbar.set_label("3-hourly Accumulated Rainfall (mm)", fontsize=8)
-    cbar.ax.tick_params(labelsize=6)
-    plt.savefig(f'./image_rain/Rainfall_map_{idx}.png', dpi=300)
+
+    ax.set_title(
+        f"3-Hourly Accumulated Rainfall (mm)\nInit: {init_time_str}\nValid: {valid_time_str}",
+        fontsize=9
+    )
+
+    cbar = plt.colorbar(
+        im, orientation="horizontal",
+        pad=0.02, aspect=30, shrink=0.8
+    )
+    cbar.set_label("Rainfall (mm)", fontsize=8)
+
+    plt.savefig(f"./image_rain/rainfall_{i:03d}.png", dpi=300)
     plt.close()
