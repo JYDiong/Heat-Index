@@ -4,73 +4,112 @@ import sys
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 import warnings
+
 warnings.filterwarnings('ignore')
+
 from herbie import Herbie
+
+# Create folders
 os.makedirs('./image_rain', exist_ok=True)
 os.makedirs('./image', exist_ok=True)
 
+# --------------------------------------------------
+# Date (Yesterday 00 UTC)
+# --------------------------------------------------
+date = datetime.utcnow().replace(
+    hour=0, minute=0, second=0, microsecond=0
+) - timedelta(days=1)
 
-from datetime import datetime
+# --------------------------------------------------
+# Select forecast hour (CHANGE IF NEEDED)
+# --------------------------------------------------
+fxx = 6
 
-date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+H = Herbie(
+    date=date,
+    model="gfs",
+    product="pgrb2.0p25",
+    fxx=fxx
+)
 
-for fxx in range(0, 25):
-    H = Herbie(
-        date=date,
-        model="gfs",
-        product="pgrb2.0p25",
-        fxx=fxx
-    )
-    
-# Get 2m temperature
-ds = H.xarray(":(TMP:2 m above ground||DPT:2 m above ground|APCP:surface):")
+# --------------------------------------------------
+# Download Required Variables
+# --------------------------------------------------
+ds = H.xarray(
+    ":(TMP:2 m above ground|DPT:2 m above ground|APCP:surface):"
+)
+
+# If Herbie returns list → merge
 if isinstance(ds, list):
     ds = xr.merge(ds)
-ds_Malaysian = ds.sel(longitude=slice(100, 120), latitude=slice(12, 0))
 
-def temp2F(ds):
-    celcius = ds - 273.15
-    fahrenheit = (celcius * (9/5)) + 32
+# --------------------------------------------------
+# Subset Malaysia
+# --------------------------------------------------
+ds_Malaysian = ds.sel(
+    longitude=slice(100, 120),
+    latitude=slice(12, 0)
+)
+
+# --------------------------------------------------
+# Temperature Conversion
+# --------------------------------------------------
+def temp2F(da):
+    celsius = da - 273.15
+    fahrenheit = (celsius * 9/5) + 32
     return fahrenheit
 
+
+tmp_2m_f = temp2F(ds_Malaysian["t2m"])
+
+# --------------------------------------------------
+# Compute Relative Humidity from Temp + Dewpoint
+# --------------------------------------------------
+T = ds_Malaysian["t2m"] - 273.15
+
+if "d2m" not in ds_Malaysian:
+    raise ValueError("Dewpoint (d2m) not found in dataset")
+
+Td = ds_Malaysian["d2m"] - 273.15
+
+es = 6.112 * xr.ufuncs.exp((17.67 * T) / (T + 243.5))
+e  = 6.112 * xr.ufuncs.exp((17.67 * Td) / (Td + 243.5))
+
+rh2m = 100 * (e / es)
+
+# Store into dataset
+ds_Malaysian["rh2m"] = rh2m
+
+# --------------------------------------------------
+# Heat Index Calculation
+# --------------------------------------------------
 def calculate_heat_index_combined(T_f, RH):
-    """
-    Heat Index calculation:
-      - If T_f <= 80°F, use simplified Steadman formula
-      - Else, use full NWS regression formula
-    Works with xarray DataArrays.
-    """
-    # Simplified Steadman formula
-    HI_simple = 0.5 * (T_f + 61.0 + ((T_f - 68.0) * 1.2) + (RH * 0.094))
 
-    # Full NWS regression equation
-    HI_full = (-42.379 + 2.04901523 * T_f + 10.14333127 * RH -
-               0.22475541 * T_f * RH -
-               6.83783e-3 * T_f**2 -
-               5.481717e-2 * RH**2 +
-               1.22874e-3 * T_f**2 * RH +
-               8.5282e-4 * T_f * RH**2 -
-               1.99e-6 * T_f**2 * RH**2)
+    HI_simple = 0.5 * (
+        T_f + 61.0 + ((T_f - 68.0) * 1.2) + (RH * 0.094)
+    )
 
-    # Use xr.where to choose formula based on temperature
+    HI_full = (
+        -42.379
+        + 2.04901523 * T_f
+        + 10.14333127 * RH
+        - 0.22475541 * T_f * RH
+        - 6.83783e-3 * T_f**2
+        - 5.481717e-2 * RH**2
+        + 1.22874e-3 * T_f**2 * RH
+        + 8.5282e-4 * T_f * RH**2
+        - 1.99e-6 * T_f**2 * RH**2
+    )
+
     HI = xr.where(T_f <= 80, HI_simple, HI_full)
 
     return HI
 
-# Convert temperature to Fahrenheit
-tmp_2m_f = temp2F(ds_Malaysian['t2m'])
 
-# Find the rh
-es = 6.112 * xr.ufuncs.exp((17.67 * T) / (T + 243.5))
-e  = 6.112 * xr.ufuncs.exp((17.67 * Td) / (Td + 243.5))
+HI = calculate_heat_index_combined(tmp_2m_f, rh2m)
 
-ds["rh2m"] = 100 * (e / es)
-
-# Calculate Heat Index using both formulas
-HI = calculate_heat_index_combined(tmp_2m_f, rh_2m)
 HI_computed = HI.compute()
 
 import cartopy.crs as ccrs
