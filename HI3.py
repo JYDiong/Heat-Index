@@ -26,7 +26,7 @@ for fxx in range(0, 25):
     )
     
 # Get 2m temperature
-ds = H.xarray(":(TMP:2 m above ground|APCP:surface):")
+ds = H.xarray(":(TMP:2 m above ground||DPT:2 m above ground|APCP:surface):")
 if isinstance(ds, list):
     ds = xr.merge(ds)
 ds_Malaysian = ds.sel(longitude=slice(100, 120), latitude=slice(12, 0))
@@ -61,8 +61,13 @@ def calculate_heat_index_combined(T_f, RH):
     return HI
 
 # Convert temperature to Fahrenheit
-tmp_2m_f = temp2F(ds_Malaysian['tmp2m'])
-rh_2m = ds_Malaysian['rh2m']
+tmp_2m_f = temp2F(ds_Malaysian['t2m'])
+
+# Find the rh
+es = 6.112 * xr.ufuncs.exp((17.67 * T) / (T + 243.5))
+e  = 6.112 * xr.ufuncs.exp((17.67 * Td) / (Td + 243.5))
+
+ds["rh2m"] = 100 * (e / es)
 
 # Calculate Heat Index using both formulas
 HI = calculate_heat_index_combined(tmp_2m_f, rh_2m)
