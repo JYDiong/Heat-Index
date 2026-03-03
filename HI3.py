@@ -27,6 +27,8 @@ for fxx in range(0, 25):
     
 # Get 2m temperature
 ds = H.xarray(":(TMP:2 m above ground|APCP:surface):")
+if isinstance(ds, list):
+    ds = xr.merge(ds)
 ds_Malaysian = ds.sel(lon=slice(100, 120), lat=slice(12, 0))
 
 def temp2F(ds):
