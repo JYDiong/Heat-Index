@@ -181,7 +181,7 @@ for i in range(n_times):
 # --------------------------------------------------
 print("Generating rainfall maps...")
 
-rain = ds["apcpsfc"]
+rain = ds["tp"]
 rain_3hr = rain.diff("time").compute()
 
 for i in range(len(rain_3hr.time)):
