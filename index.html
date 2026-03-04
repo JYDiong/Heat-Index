@@ -60,7 +60,7 @@
   <h1>GFS Heat Index Forecast</h1>
 
   <label for="slider">Forecast Hour: <span id="hour-label">0</span></label>
-  <input type="range" id="slider" min="0" max="39" value="0" />
+  <input type="range" id="slider" min="0" max="206" value="0" />
 
   <img id="forecast-image" src="./image/Heat_index_init_0.png" alt="Forecast Image" />
 
@@ -93,7 +93,7 @@
 
     sliderRain.addEventListener('input', () => {
     const idx = sliderRain.value;
-    rainImage.src = `./image_rain/Rainfall_map_${idx}.png`;
+    rainImage.src = `./image_rain/rainfall_${idx}.png`;
     hourLabelRain.textContent = idx * 3;
     });
   </script>
