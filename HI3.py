@@ -52,12 +52,16 @@ for fxx in forecast_hours:
     if isinstance(ds, list):
         ds = xr.merge(ds)
 
+    valid_time = init_date + timedelta(hours=fxx)
+    ds = ds.expand_dims(time=[valid_time])  # ensures each forecast hour has its own time
+
     datasets.append(ds)
 
 # --------------------------------------------------
 # Combine all timesteps
 # --------------------------------------------------
 ds = xr.concat(datasets, dim="time")
+ds = ds.sortby("time")  # ensures time is ascending
 
 print("Total timesteps:", len(ds.time))
 
