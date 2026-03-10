@@ -69,22 +69,22 @@
   <label for="slider-rain">Forecast Hour: <span id="hour-label-rain">0</span></label>
   <input type="range" id="slider-rain" min="0" max="207" value="0" />
 
-  <img id="rain-image" src="./image_rain/Rainfall_map_0.png" alt="Rainfall Forecast Image" />
+  <img id="rain-image" src="./image_rain/rainfall_000.png" alt="Rainfall Forecast Image" />
 
   <footer>
     <p>&copy; 2025 <a href="https://github.com/JYDiong">J.Y. Diong</a>. All rights reserved.</p>
     <p>Forecast generated using <a href="https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast">GFS Data</a> from NOAA.</p>
   </footer>
 
-  <script>
+   <script>
     const slider = document.getElementById('slider');
     const image = document.getElementById('forecast-image');
     const hourLabel = document.getElementById('hour-label');
 
     slider.addEventListener('input', () => {
-      const idx = slider.value;
+      const idx = String(slider.value).padStart(3, '0'); // pad to 3 digits
       image.src = `./image/heat_index_${idx}.png`;
-      hourLabel.textContent = idx * 3;
+      hourLabel.textContent = slider.value * 3; // hours
     });
 
     const sliderRain = document.getElementById('slider-rain');
@@ -92,12 +92,11 @@
     const hourLabelRain = document.getElementById('hour-label-rain');
 
     sliderRain.addEventListener('input', () => {
-    const idx = sliderRain.value;
-    rainImage.src = `./image_rain/rainfall_${idx}.png`;
-    hourLabelRain.textContent = idx * 3;
+      const idx = String(sliderRain.value).padStart(3, '0');
+      rainImage.src = `./image_rain/rainfall_${idx}.png`;
+      hourLabelRain.textContent = sliderRain.value * 3;
     });
   </script>
 
 </body>
 </html>
-
