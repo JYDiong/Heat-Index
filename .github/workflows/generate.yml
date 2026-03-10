@@ -23,6 +23,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirement.txt
+          
+      - name: Clean previous forecast images
+        run: |
+          rm -f image/*.png
+          rm -f image_rain/*.png
 
       - name: Run forecast script
         run: python HI3.py
